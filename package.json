@@ -1,0 +1,26 @@
+{
+  "name": "kaliper-html2adf",
+  "version": "1.0.0",
+  "description": "Convert the HTML strings to Atlassian Document Format",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fibotalk/html2adf.git"
+  },
+  "keywords": [
+    "html2adf",
+    "htmltoadf"
+  ],
+  "author": "Shubham Srivastava",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/fibotalk/html2adf/issues"
+  },
+  "homepage": "https://github.com/fibotalk/html2adf#readme",
+  "dependencies": {
+    "himalaya": "^1.1.0"
+  }
+}
