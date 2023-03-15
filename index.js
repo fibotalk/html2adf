@@ -1,5 +1,5 @@
 const { parse } = require("himalaya");
-let tagMap = {
+const tagMap = {
   ul: "bulletList",
   li: "listItem",
   pre: "codeBlock",
@@ -45,6 +45,13 @@ let tagMap = {
   table: "table",
   td: "tableCell",
   tr: "tableRow",
+  th: "tableHeader",
+};
+
+const textTypes = {
+  strong: "strong",
+  i: "em",
+  u: "underline",
 };
 
 /**
@@ -66,16 +73,18 @@ module.exports = function format(html) {
  */
 function formatChildren(tags) {
   for (let i = 0; i < tags.length; i++) {
+    let status = true;
     switch (tags[i].type) {
       case "text":
-        formatText(tags[i]);
+        status = formatText(tags[i]);
         break;
       case "element":
-        let status = formatElement(tags[i]);
-        if (!status) {
-          tags.splice(i, 1);
-          i--;
-        }
+        status = formatElement(tags[i]);
+        break;
+    }
+    if (!status) {
+      tags.splice(i, 1);
+      i--;
     }
   }
   return tags;
@@ -86,8 +95,12 @@ function formatChildren(tags) {
  * @param {*} tag 
  */
 function formatText(tag) {
+  let txt = tag.content.replace(/[\n\r ]/g, '');
+  if (!txt)
+    return false;
   tag.text = tag.content;
   delete tag.content;
+  return true;
 }
 
 /**
@@ -96,22 +109,62 @@ function formatText(tag) {
  * @returns 
  */
 function formatElement(tag) {
-  if (!tagMap[tag.tagName])
-    return false;
-  switch (typeof tagMap[tag.tagName]) {
-    case "object":
-      Object.assign(tag, tagMap[tag.tagName]);
-      break;
-    default:
-      tag.type = tagMap[tag.tagName];
-  }
-  delete tag.tagName;
-  delete tag.attributes;
-  if (tag.children) {
-    if (tag.children.length) {
-      tag.content = formatChildren(tag.children);
+  if (tagMap[tag.tagName]) {
+    switch (typeof tagMap[tag.tagName]) {
+      case "object":
+        Object.assign(tag, tagMap[tag.tagName]);
+        break;
+      default:
+        tag.type = tagMap[tag.tagName];
     }
+    delete tag.tagName;
+    delete tag.attributes;
+    if (tag.children) {
+      if (tag.children.length) {
+        tag.content = formatChildren(tag.children);
+      }
+      delete tag.children;
+    }
+    return true;
+  } else if (textTypes[tag.tagName]) {
+    Object.assign(tag, handleTextType(tag));
+    delete tag.tagName;
+    delete tag.attributes;
     delete tag.children;
+    return true;
+  } else {
+    return false;
   }
-  return true;
+}
+
+/**
+ * Merge all the child tags into one obj
+ * @param {*} tag 
+ */
+function handleTextType(tag) {
+  let obj = {
+    type: "text",
+    marks: [],
+    text: "",
+  };
+  mergeTree(tag, obj);
+  return obj;
+}
+
+/**
+ * Merge the obj tree into obj.marks
+ * @param {*} tag 
+ * @param {*} obj 
+ */
+function mergeTree(tag, obj) {
+  if (tag.type == "text") {
+    obj.text += tag.content;
+  } else {
+    obj.marks.push({
+      type: textTypes[tag.tagName],
+    });
+  }
+  if (tag.children && tag.children.length) {
+    mergeTree(tag.children[0], obj);
+  }
 }
