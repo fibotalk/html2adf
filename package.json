@@ -1,6 +1,6 @@
 {
   "name": "kaliper-html2adf",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Convert the HTML strings to Atlassian Document Format",
   "main": "index.js",
   "scripts": {

@@ -41,11 +41,17 @@ const tagMap = {
     },
   },
   ol: "orderedList",
-  p: "paragraph",
-  table: "table",
-  td: "tableCell",
-  tr: "tableRow",
-  th: "tableHeader",
+  p: { type: "paragraph", content: [] },
+  table: {
+    type: "table",
+    attrs: {
+      "isNumberColumnEnabled": false,
+      "layout": "default",
+    }
+  },
+  td: { type: "tableCell", content: [] },
+  tr: { type: "tableRow", content: [] },
+  th: { type: "tableHeader", content: [] },
 };
 
 const textTypes = {
@@ -70,16 +76,17 @@ module.exports = function format(html) {
 /**
  * 
  * @param {object[]} tags 
+ * @param {object} parent : parent tag
  */
-function formatChildren(tags) {
+function formatChildren(tags, parent) {
   for (let i = 0; i < tags.length; i++) {
     let status = true;
     switch (tags[i].type) {
       case "text":
-        status = formatText(tags[i]);
+        status = formatText(tags[i], parent);
         break;
       case "element":
-        status = formatElement(tags[i]);
+        status = formatElement(tags[i], parent);
         break;
     }
     if (!status) {
@@ -93,22 +100,32 @@ function formatChildren(tags) {
 /**
  * Format text
  * @param {*} tag 
+ * @param {object} parent : parent tag
  */
-function formatText(tag) {
+function formatText(tag, parent) {
   let txt = tag.content.replace(/[\n\r ]/g, '');
   if (!txt)
     return false;
   tag.text = tag.content;
   delete tag.content;
+  if (!parent || parent.type == "tableCell") {
+    tag.type = "paragraph";
+    tag.content = [{
+      type: "text",
+      text: tag.text,
+    }];
+    delete tag.text;
+  }
   return true;
 }
 
 /**
  * Format other elements
  * @param {*} tag 
+ * @param {object} parent : parent tag
  * @returns 
  */
-function formatElement(tag) {
+function formatElement(tag, parent) {
   if (tagMap[tag.tagName]) {
     switch (typeof tagMap[tag.tagName]) {
       case "object":
@@ -121,7 +138,7 @@ function formatElement(tag) {
     delete tag.attributes;
     if (tag.children) {
       if (tag.children.length) {
-        tag.content = formatChildren(tag.children);
+        tag.content = formatChildren(tag.children, tag);
       }
       delete tag.children;
     }
